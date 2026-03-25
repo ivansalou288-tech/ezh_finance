@@ -254,6 +254,20 @@ async def process_table_name(message: types.Message, state: FSMContext):
     table_name = message.text.strip()
     user_id = message.from_user.id
     
+    # Сначала проверяем доступ к таблице и применяем стилизацию
+    validation_status = validate_and_style_table(table_name)
+    
+    if not validation_status:
+        await message.answer(
+            f"❌ Не удалось добавить таблицу '{table_name}'.\n\n"
+            f"Возможные причины:\n"
+            f"• Таблица не существует\n"
+            f"• Бот не имеет прав доступа к таблице\n\n"
+            f"Проверьте название и права доступа, затем попробуйте снова."
+        )
+        await state.clear()
+        return
+    
     async with AsyncSessionLocal() as session:
         # Проверяем, нет ли уже такой таблицы у пользователя
         result = await session.execute(
@@ -268,7 +282,10 @@ async def process_table_name(message: types.Message, state: FSMContext):
             new_table = Sheets(user_id=user_id, name=table_name)
             session.add(new_table)
             await session.commit()
-            await message.answer(f"Таблица '{table_name}' успешно добавлена!")
+            await message.answer(
+                f"✅ Таблица '{table_name}' успешно добавлена!\n"
+                f"Динамическая стилизация применена."
+            )
     
     await state.clear()
 

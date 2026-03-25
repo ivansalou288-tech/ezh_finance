@@ -7,6 +7,117 @@ gc = gspread.service_account(filename="src-login.json")
 # Open a sheet from a spreadsheet in one go
 wks = gc.open("ezh-fin-manager").sheet1
 
+def validate_and_style_table(spreadsheet_name):
+    """Validate table exists and apply dynamic styling. Returns True if successful."""
+    try:
+        # Try to open the spreadsheet
+        spreadsheet = gc.open(spreadsheet_name)
+        worksheet = spreadsheet.sheet1
+        
+        # Get the worksheet ID
+        worksheet_id = worksheet.id
+        
+        # Apply conditional formatting (dynamic styling)
+        body = {
+            'requests': [
+                {
+                    'addConditionalFormatRule': {
+                        'rule': {
+                            'ranges': [
+                                {
+                                    'sheetId': worksheet_id,
+                                    'startColumnIndex': 2,
+                                    'endColumnIndex': 3
+                                }
+                            ],
+                            'booleanRule': {
+                                'condition': {
+                                    'type': 'NUMBER_GREATER',
+                                    'values': [{'userEnteredValue': '0'}]
+                                },
+                                'format': {
+                                    'backgroundColor': { 
+                                        'red': 0.8,
+                                        'green': 1.0,
+                                        'blue': 0.8
+                                    }
+                                }
+                            }
+                        },
+                        'index': 0
+                    }
+                },
+                {
+                    'addConditionalFormatRule': {
+                        'rule': {
+                            'ranges': [
+                                {
+                                    'sheetId': worksheet_id,
+                                    'startColumnIndex': 2,
+                                    'endColumnIndex': 3
+                                }
+                            ],
+                            'booleanRule': {
+                                'condition': {
+                                    'type': 'NUMBER_LESS',
+                                    'values': [{'userEnteredValue': '0'}]
+                                },
+                                'format': {
+                                    'backgroundColor': {
+                                        'red': 1.0,
+                                        'green': 0.8,
+                                        'blue': 0.8
+                                    }
+                                }
+                            }
+                        },
+                        'index': 1
+                    }
+                },
+                {
+                    'addConditionalFormatRule': {
+                        'rule': {
+                            'ranges': [
+                                {
+                                    'sheetId': worksheet_id,
+                                    'startColumnIndex': 2,
+                                    'endColumnIndex': 3
+                                }
+                            ],
+                            'booleanRule': {
+                                'condition': {
+                                    'type': 'NUMBER_EQ',
+                                    'values': [{'userEnteredValue': '0'}]
+                                },
+                                'format': {
+                                    'backgroundColor': {
+                                        'red': 0.9,
+                                        'green': 0.9,
+                                        'blue': 0.9
+                                    }
+                                }
+                            }
+                        },
+                        'index': 2
+                    }
+                }
+            ]
+        }
+        
+        spreadsheet.batch_update(body)
+        print(f"Conditional formatting applied successfully to {spreadsheet_name}")
+        return True
+        
+    except gspread.SpreadsheetNotFound:
+        print(f"Spreadsheet '{spreadsheet_name}' not found")
+        return False
+    except gspread.exceptions.APIError as e:
+        print(f"API error accessing '{spreadsheet_name}': {e}")
+        return False
+    except Exception as e:
+        print(f"Error validating/styling table '{spreadsheet_name}': {e}")
+        return False
+
 # Add row with automatic summary management
 def clear_all_data():
     """Clear all data from worksheet and reset"""
