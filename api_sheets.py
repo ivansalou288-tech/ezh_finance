@@ -19,10 +19,14 @@ def clear_all_data():
     except Exception as e:
         print(f"Error clearing data: {e}")
 
-def add_order(a_value, b_value):
-    """Add row, clear old summary, and add new summary"""
+def add_order(a_value, b_value, spreadsheet_name="ezh-fin-manager"):
+    """Add row, clear old summary, and add new summary to specified spreadsheet"""
     try:
         import time
+        
+        # Open the specified spreadsheet
+        spreadsheet = gc.open(spreadsheet_name)
+        wks = spreadsheet.sheet1
         
         # Step 1: Find and clear old summary by checking cell formulas (not values)
         all_values = wks.get_all_values()
@@ -83,7 +87,7 @@ def add_order(a_value, b_value):
         return True
         
     except Exception as e:
-        print(f"Error in add_row_with_auto_summary: {e}")
+        print(f"Error in add_order: {e}")
         return False
 
 # Add summary row with totals and purple formatting
