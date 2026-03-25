@@ -2,9 +2,54 @@ from api_sheets import *
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import Command
 import asyncio
+from sqlalchemy import create_engine, Column, Integer, String, select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, declarative_base
 
 
 token = '8272142309:AAGIHjAHT0iXayrPeJzUX6JM9X-OR6PPlBE'
+
+async_engine = create_async_engine("sqlite+aiosqlite:///vpn_bot.db", echo=False)
+
+Base = declarative_base()
+
+class Info(Base):
+    __tablename__ = "tables_names"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+
+# Создание таблиц (асинхронно)
+async def create_tables():
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+# Создание фабрики асинхронных сессий
+AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
+
+# Асинхронная функция для создания/обновления info
+async def create_or_update_info(name: str, user_id: int):
+    async with AsyncSessionLocal() as session:
+        # Ищем запись с указанным id
+        result = await session.execute(select(Info).filter(Info.id == user_id))
+        info = result.scalar_one_or_none()
+        
+        if info:
+            # Если запись существует, обновляем ее
+            info.name = name
+            await session.commit()
+            await session.refresh(info)
+            print(f"Запись с id={user_id} обновлена: {name}")
+        else:
+            # Если записи нет, создаем новую
+            info = Info(id=user_id, name=name)
+            session.add(info)
+            await session.commit()
+            await session.refresh(info)
+            print(f"Создана новая запись с id={user_id}: {name}")
+        
+        return info
+
 
 
 router = Router()
