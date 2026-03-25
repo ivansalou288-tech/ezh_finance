@@ -160,9 +160,15 @@ async def handle_activate_callback(callback: types.CallbackQuery):
         tables = result.scalars().all()
     
     if not tables:
-        await callback.message.edit_text(
-            "У вас нет добавленных таблиц. Используйте /add_table чтобы добавить таблицу."
-        )
+        text = "У вас нет добавленных таблиц. Используйте /add_table чтобы добавить таблицу."
+        if callback.inline_message_id:
+            await callback.bot.edit_message_text(
+                text=text,
+                inline_message_id=callback.inline_message_id,
+                parse_mode="HTML"
+            )
+        elif callback.message:
+            await callback.message.edit_text(text)
         await callback.answer()
         return
     
@@ -174,10 +180,17 @@ async def handle_activate_callback(callback: types.CallbackQuery):
         ]
     )
     
-    await callback.message.edit_text(
-        "Выберите таблицу для записи:",
-        reply_markup=keyboard
-    )
+    text = "Выберите таблицу для записи:"
+    if callback.inline_message_id:
+        await callback.bot.edit_message_text(
+            text=text,
+            inline_message_id=callback.inline_message_id,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+    elif callback.message:
+        await callback.message.edit_text(text, reply_markup=keyboard)
+    
     await callback.answer()
 
 
@@ -190,7 +203,15 @@ async def handle_select_table_callback(callback: types.CallbackQuery):
     query_text = user_pending_data.get(user_id)
     
     if not query_text:
-        await callback.message.edit_text("Данные для записи не найдены. Попробуйте снова.")
+        text = "Данные для записи не найдены. Попробуйте снова."
+        if callback.inline_message_id:
+            await callback.bot.edit_message_text(
+                text=text,
+                inline_message_id=callback.inline_message_id,
+                parse_mode="HTML"
+            )
+        elif callback.message:
+            await callback.message.edit_text(text)
         await callback.answer()
         return
     
@@ -205,9 +226,15 @@ async def handle_select_table_callback(callback: types.CallbackQuery):
             # Записываем данные в выбранную таблицу
             await handle_activation(user_id, query_text, callback, callback.bot, table.name)
         else:
-            await callback.message.edit_text(
-                "Таблица не найдена"
-            )
+            text = "Таблица не найдена"
+            if callback.inline_message_id:
+                await callback.bot.edit_message_text(
+                    text=text,
+                    inline_message_id=callback.inline_message_id,
+                    parse_mode="HTML"
+                )
+            elif callback.message:
+                await callback.message.edit_text(text)
             await callback.answer()
             return
     
